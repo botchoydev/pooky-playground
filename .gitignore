@@ -1,7 +1,3 @@
-#project files
-
 node_modules
 assets
-
-#macOS
 .DS_Store
