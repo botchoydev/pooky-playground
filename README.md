@@ -5,9 +5,10 @@ A pooky test environment, simply enter the URL and tohru and we'll remove the Da
 ## Instructions
 
 1. Edit your host file to point `supremenewyork.com` to `127.0.0.1`
-2. Run `npm install`
-3. Run `npm start`
-4. Visit `supremenewyork.com`
+2. Rename `config.example.json` → `config.json`
+3. Run `npm install`
+4. Run `npm start`
+5. Visit `supremenewyork.com`
 
 ## Contributors ✨
 
