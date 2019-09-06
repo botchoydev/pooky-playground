@@ -4,7 +4,11 @@ A pooky test environment, simply enter the URL and tohru and we'll remove the Da
 
 ## Instructions
 
-Edit your host file to point `supremenewyork.com` to `127.0.0.1`
-Run `npm install`
-Run `node .`
-Visit `supremenewyork.com`
+1. Edit your host file to point `supremenewyork.com` to `127.0.0.1`
+2. Run `npm install`
+3. Run `npm start`
+4. Visit `supremenewyork.com`
+
+## License
+
+[MIT](LICENSE)

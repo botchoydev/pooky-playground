@@ -1,18 +1,16 @@
+const express = require("express");
+const app = express();
+const fs = require("fs");
 const inquirer = require("inquirer");
 const axios = require("axios");
-var express = require("express");
-var app = express();
-const fs = require("fs");
 const path = require("path");
 const beautify = require("js-beautify").js;
 const esprima = require("esprima");
 
-const PORT = process.env.PORT || 80;
-
 app.engine("ejs", require("ejs").renderFile);
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
-app.use("/assets", express.static("assets"));
+app.use("/assets", express.static(path.join(__dirname, "../assets")));
 
 const loadFrom = async () => {
   const locationQuestion = [
@@ -27,7 +25,7 @@ const loadFrom = async () => {
 
   const location = await inquirer.prompt(locationQuestion);
   if (location.choice === "load from file") {
-    const files = fs.readdirSync(path.join(__dirname, "assets"));
+    const files = fs.readdirSync(path.join(__dirname, "../assets"));
     const fileQuestion = [
       {
         type: "list",
@@ -104,52 +102,76 @@ const fetchPookyFromURL = async url => {
   return finalFormattedPooky;
 };
 
+const saveConfig = () => {
+  fs.writeFile(
+    path.join(__dirname, "../config.json"),
+    JSON.stringify(global.config, null, 2),
+    err => {
+      if (err) throw err;
+    }
+  );
+};
+
 loadFrom()
   .then(res => {
-    const { type, location, tohru } = res;
-    let fileName;
+    let { type, location, tohru } = res;
+    const pookyFileName = `${location.substr(location.indexOf("pooky.min."))}`;
 
     if (type === "url") {
       fetchPookyFromURL(location).then(pooky => {
-        const dir = path.join(__dirname, "assets");
-
-        fileName = path.join(
-          dir,
-          location.substr(location.indexOf("pooky.min."))
-        );
+        const dir = path.join(__dirname, "../assets");
+        const fileName = path.join(dir, pookyFileName);
 
         // If assets dir doesn't exist we create one.
         !fs.existsSync(dir) && fs.mkdirSync(dir);
 
-        fs.writeFile(fileName, pooky, err => {
-          if (err) throw err;
-        });
+        let found = false;
+
+        // Loop through our pookys to check if it already exists
+        for (let pooky of global.config.pookys) {
+          if (pooky.fileName == pookyFileName) {
+            found = true;
+          }
+        }
+
+        // If pooky is not already added to our config.
+        if (!found) {
+          // Save our pooky to file.
+          fs.writeFile(fileName, pooky, err => {
+            if (err) throw err;
+          });
+
+          // Push our newly saved pooky/tohru to our current config.
+          global.config.pookys.push({
+            fileName: pookyFileName,
+            tohru
+          });
+
+          // Save our config to file.
+          saveConfig(global.config);
+        }
       });
     } else {
-      fileName = `http://supremenewyork.com/assets/${location}`;
+      // Loop through our pookys and find our tohru.
+      for (let pooky of global.config.pookys) {
+        if (pooky.fileName == pookyFileName) {
+          tohru = pooky.tohru;
+        }
+      }
     }
 
+    location = `http://supremenewyork.com/assets/${pookyFileName}`;
+
+    // Our route
     app.get("/", function(req, res) {
       res.render("index", {
-        pooky: type === "url" ? location : fileName,
+        pooky: location,
         tohru: tohru
       });
     });
-
-    app.listen(PORT);
-
-    console.log(
-      `Server started on PORT ${PORT}. (Make sure you edit host file)`
-    );
   })
   .catch(err => {
-    switch (err.code) {
-      case "ENOENT":
-        console.error(
-          `Error: The file or directory ${err.path} does not exist, please create the file or directory.`
-        );
-        break;
-      default:
-        throw err;
-    }
+    console.log(`An error occured: ${err}`);
   });
+
+module.exports = app;
